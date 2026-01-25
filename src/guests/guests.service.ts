@@ -1,7 +1,7 @@
 import { ZenotiClient } from "@/_internal/client";
 import { CreateGuestDto, SearchGuestDto } from "@/guests/dto";
 import { ValidationError } from "@/errors";
-import { SearchGuestResponse } from "./types";
+import { GetGuestResponse, ListGuestsResponse, ListPurchasesResponse, SearchGuestResponse } from "./types";
 
 export class GuestService {
     constructor(private readonly zenoti: ZenotiClient){}
@@ -32,6 +32,33 @@ export class GuestService {
         
         const data = await response.data as SearchGuestResponse;
         
+        return data;
+    }
+
+    async getAll(page?: number, size?: number) {
+        // https://api.zenoti.com/v1/guests?center_id={center_id}&last_updated={date}
+        const response = await this.zenoti.getClient().get(`/v1/guests`, {
+            params: {
+                center_id: this.zenoti.getCenterId(),
+                page: page || 1,
+                size: size || 10
+            }
+        });
+        const data = await response.data as ListGuestsResponse;
+        return data;
+    }
+    
+    async get(guest_id: string) {
+        // https://api.zenoti.com/v1/guests/{guest_id}
+        const response = await this.zenoti.getClient().get(`/v1/guests/${guest_id}`);
+
+        const data = await response.data as GetGuestResponse;
+        return data;
+    }
+
+    async getPurchases(guest_id: string){
+        const response = await this.zenoti.getClient().get(`/v1/guests/${guest_id}/products`);
+        const data = await response.data as ListPurchasesResponse;
         return data;
     }
 }

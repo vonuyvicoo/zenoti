@@ -1,17 +1,21 @@
-// Zenoti SDK entry point
+import { GuestService } from "./guests";
+import { AppointmentService } from "./appointments";
+import { ZenotiClient, ZenotiClientOptions } from "./_internal/client";
 
-// Test imports with path alias (@)
-import { greet, VERSION } from '@/utils';
-import type { User, Status } from '@/types';
+class Zenoti extends ZenotiClient {
+    public guests: GuestService;
+    public appointments: AppointmentService;
 
-// Test imports without .js extension
-import { greet as greetUtil } from './utils';
-import type { User as UserType } from './types';
+    constructor(options: ZenotiClientOptions){
+        super(options);
+        this.guests = new GuestService(this);
+        this.appointments = new AppointmentService(this);
+    }
+}
 
-// Re-export for SDK consumers
-export { greet, VERSION };
-export type { User, Status };
-
-// Example usage (for testing)
-console.log(greet('Zenoti SDK'));
-console.log('Version:', VERSION);
+export {
+    Zenoti,
+    ZenotiClientOptions
+}
+export * from "./guests";
+export * from "./appointments";
