@@ -1,13 +1,13 @@
 import { ZenotiClient } from "@/_internal/client";
 import { CreateGuestDto, SearchGuestDto } from "@/guests/dto";
 import { ValidationError } from "@/errors";
-import { GetGuestResponse, ListGuestsResponse, ListPurchasesResponse, SearchGuestResponse } from "./types";
+import { GetGuestResponse, ListGuestsApiResponse, ListGuestsResponse, ListPurchasesResponse, SearchGuestResponse } from "./types";
 
 export class GuestService {
     constructor(private readonly zenoti: ZenotiClient){}
 
     async create(payload: CreateGuestDto) {
-        const response = await this.zenoti.getClient().post('v1/guests', {
+        const response = await this.zenoti.getClient().post('/v1/guests', {
             ...payload,
             center_id: this.zenoti.getCenterId()
         });
@@ -44,7 +44,14 @@ export class GuestService {
                 size: size || 10
             }
         });
-        const data = await response.data as ListGuestsResponse;
+        const apiData = await response.data as ListGuestsApiResponse;
+        
+        // Map API response (page_Info) to SDK response (page_info)
+        const data: ListGuestsResponse = {
+            guests: apiData.guests,
+            page_info: apiData.page_Info
+        };
+        
         return data;
     }
     

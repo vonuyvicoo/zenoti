@@ -27,7 +27,7 @@ export class ServicesService {
         })
     }
 
-    /* Expirimental, may rate limit you  */
+    /* Experimental, may rate limit you  */
     async search(search_string: string){
         if (!search_string?.trim()) {
             return [];

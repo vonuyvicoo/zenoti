@@ -23,7 +23,7 @@ export function calculateMatchScore(serviceName: string, searchWords: string[]):
         }
     });
 
-    // shorter namesare more relevant
+    // shorter names are more relevant
     score -= serviceName.length * 0.1;
 
     return score;
