@@ -7,7 +7,7 @@ export class GuestService {
     constructor(private readonly zenoti: ZenotiClient){}
 
     async create(payload: CreateGuestDto) {
-        const response = await this.zenoti.getClient().post('v1/guests', {
+        const response = await this.zenoti.getClient().post('/v1/guests', {
             ...payload,
             center_id: this.zenoti.getCenterId()
         });

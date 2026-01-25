@@ -32,7 +32,7 @@ export type ListPurchasesResponse = {
 export type ListGuestsResponse = {
     //https://docs.zenoti.com/reference/list-all-guests-of-a-center
     guests: Guest[],
-    page_Info: PageInfo
+    page_info: PageInfo
 }
 
 export type PageInfo = {
