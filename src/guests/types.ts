@@ -29,6 +29,13 @@ export type ListPurchasesResponse = {
     products: Product[]
 }
 
+// API returns page_Info (capital I)
+export type ListGuestsApiResponse = {
+    guests: Guest[],
+    page_Info: PageInfo
+}
+
+// SDK returns normalized page_info (lowercase)
 export type ListGuestsResponse = {
     //https://docs.zenoti.com/reference/list-all-guests-of-a-center
     guests: Guest[],
