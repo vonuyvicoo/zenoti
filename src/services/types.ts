@@ -8,3 +8,19 @@ export interface Service {
         final_price: number;
     }
 }
+
+export type Price = {
+    currency_id: number,
+    sales: number,
+    tax: number,
+    final: number,
+    final1: number,
+    discount: number,
+    tip: number,
+    ssg: number | null,
+    rounding_correction: number
+} 
+
+export type ListServicesResponse = {
+    services: Service[];
+}

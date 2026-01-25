@@ -13,7 +13,8 @@ export type Guest = {
 }
 
 export type SearchGuestResponse = {
-    guests: Guest[]
+    guests: Guest[];
+    page_info: PageInfo;
 }
 
 export type Product = {
@@ -31,7 +32,13 @@ export type ListPurchasesResponse = {
 export type ListGuestsResponse = {
     //https://docs.zenoti.com/reference/list-all-guests-of-a-center
     guests: Guest[],
-    page_info: any // TODO: change
+    page_Info: PageInfo
+}
+
+export type PageInfo = {
+    total: number;
+    page: number;
+    size: number;
 }
 
 export type GetGuestResponse = {
