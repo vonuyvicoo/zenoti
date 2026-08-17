@@ -98,14 +98,88 @@ await client.bookings.reserve(booking.id, slots[0].Time);
 await client.bookings.confirm(booking.id, "Notes", "Group name");
 ```
 
+## Multi-location availability
+
+The client is scoped to one `centerId`, so a business with several locations
+needs a way to discover its centers and search across them.
+
+```typescript
+const centers = await client.centers.getAll();
+
+const availability = await client.centers.searchAvailability({
+  centerIds: centers.map(c => c.id),
+  serviceId: "service-uuid",
+  guestId: "guest-uuid",
+  date: "2026-09-01",
+  concurrency: 4
+});
+```
+
+Zenoti exposes no cross-center availability endpoint: slots are reachable
+only by creating a booking against one center and reading its slots. Firing
+that pair once per center simultaneously is the fastest way to hit the
+account rate limit, so the fan-out runs through a bounded worker pool
+(`concurrency`, default 4).
+
+Failures are isolated per center. A center that errors comes back with an
+empty `slots` array and an `error` field rather than rejecting the whole
+search, so one unreachable location cannot blank the results page.
+
+## Payments
+
+```typescript
+const invoice = await client.payments.getInvoice(invoiceId);
+const options = await client.payments.getPaymentOptions(invoiceId);
+
+// Hosted page: card details never touch your front end.
+const { redirect_url } = await client.payments.createHostedPaymentSession(
+  invoiceId,
+  { return_url: "https://example.com/booking/done" }
+);
+```
+
+**On PCI scope.** `createHostedPaymentSession` hands the guest to Zenoti's
+own payment page, so card data never crosses your origin and the integration
+stays in SAQ A. Collecting the card on your own front end and posting it
+through puts your pages in the cardholder data path, which moves you to
+SAQ A-EP and pulls the front end into scope. Prefer the hosted route unless
+an embedded form is a hard requirement.
+
+`collect()` settles an invoice against a stored payment method or account
+balance. No method here accepts a raw card number by design.
+
 ## Errors
 
-The SDK throws:
+Every request goes through a response interceptor that maps Zenoti's HTTP
+status codes onto typed errors, so a failure can be handled by `instanceof`
+rather than by reading `error.response.status` at the call site.
 
-- `ValidationError` – Invalid or missing input (e.g. empty search, invalid DTOs)
-- `NotFoundError` – Resource not found
-- `AuthenticationError` – Invalid or missing API key
-- `AuthorizationError` – Insufficient permissions
+| Thrown | When |
+| --- | --- |
+| `ValidationError` | Invalid or missing input, plus HTTP 400 and 422. The raw body is on `.details` |
+| `AuthenticationError` | HTTP 401, an invalid or missing API key |
+| `AuthorizationError` | HTTP 403, insufficient permissions |
+| `NotFoundError` | HTTP 404, resource not found |
+| `RateLimitError` | HTTP 429. `.retryAfterSeconds` carries `Retry-After` when Zenoti sends it |
+| `ZenotiError` | Any other non-2xx response, and network or timeout failures |
+
+All of them extend `ZenotiError`, so `catch (e) { if (e instanceof ZenotiError) ... }`
+covers every SDK failure.
+
+```typescript
+import { RateLimitError, NotFoundError } from "zenoti";
+
+try {
+  await client.bookings.reserve(bookingId, slotTime);
+} catch (error) {
+  if (error instanceof RateLimitError) {
+    await sleep((error.retryAfterSeconds ?? 1) * 1000);
+    // retry
+  } else if (error instanceof NotFoundError) {
+    // the booking expired, start the flow again
+  }
+}
+```
 
 ## Exports
 
@@ -115,10 +189,12 @@ You can import the main client, options, services, types, and errors:
 import {
   Zenoti,
   ZenotiClientOptions,
+  ZenotiError,
   ValidationError,
   NotFoundError,
   AuthenticationError,
   AuthorizationError,
+  RateLimitError,
 } from "zenoti";
 ```
 
